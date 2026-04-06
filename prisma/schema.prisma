@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Appartement {
+  id           Int     @id @default(autoincrement())
+  nom          String  @default("Nour Elhouda")
+  gerant       String  @default("Abdelmalik")
+  nombrePieces Int     @default(12)
+  pieces       Piece[]
+}
+
+model Piece {
+  id            Int         @id @default(autoincrement())
+  appartementId Int
+  numero        String      @unique
+  type          String
+  statut        StatutPiece @default(DISPONIBLE)
+  appartement   Appartement @relation(fields: [appartementId], references: [id])
+  entrees       Entree[]
+  achats        Achat[]
+}
+
+enum StatutPiece {
+  DISPONIBLE
+  OCCUPEE
+  MAINTENANCE
+}
+
+model Client {
+  id         Int        @id @default(autoincrement())
+  nomComplet String
+  fonction   String?
+  telephone  String?
+  email      String?    @unique
+  createdAt  DateTime   @default(now())
+  entrees    Entree[]
+  paiements  Paiement[]
+}
+
+model Entree {
+  id             Int          @id @default(autoincrement())
+  clientId       Int
+  pieceId        Int
+  dateArrivee    DateTime
+  dateDepart     DateTime?
+  montantAnnuite Decimal      @db.Decimal(10, 2)
+  statut         StatutEntree @default(EN_COURS)
+  notes          String?
+  createdAt      DateTime     @default(now())
+  client         Client       @relation(fields: [clientId], references: [id])
+  piece          Piece        @relation(fields: [pieceId], references: [id])
+  paiements      Paiement[]
+}
+
+enum StatutEntree {
+  EN_COURS
+  TERMINE
+  ANNULE
+}
+
+model Paiement {
+  id           Int              @id @default(autoincrement())
+  entreeId     Int
+  clientId     Int
+  montant      Decimal          @db.Decimal(10, 2)
+  nature       NaturePaiement
+  situation    SituationPaiement
+  datePaiement DateTime         @default(now())
+  reference    String?
+  notes        String?
+  entree       Entree           @relation(fields: [entreeId], references: [id])
+  client       Client           @relation(fields: [clientId], references: [id])
+}
+
+enum NaturePaiement {
+  CHEQUE
+  ESPECES
+  VIREMENT
+}
+
+enum SituationPaiement {
+  JOURNALIER
+  HEBDOMADAIRE
+  MENSUEL
+}
+
+model Achat {
+  id           Int      @id @default(autoincrement())
+  description  String
+  montant      Decimal  @db.Decimal(10, 2)
+  dateAchat    DateTime @default(now())
+  categorie    String?
+  fournisseur  String?
+  pieceId      Int?
+  justificatif String?
+  piece        Piece?   @relation(fields: [pieceId], references: [id])
+}
+
+model Utilisateur {
+  id        Int      @id @default(autoincrement())
+  nom       String
+  email     String   @unique
+  role      Role     @default(GESTIONNAIRE)
+  password  String
+  actif     Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  PROPRIETAIRE
+  GESTIONNAIRE
+  ADMIN
+}
